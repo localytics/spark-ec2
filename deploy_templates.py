@@ -19,11 +19,15 @@ master_ram_kb = int(
 # This is the master's memory. Try to find slave's memory as well
 first_slave = os.popen("cat /root/spark-ec2/slaves | head -1").read().strip()
 
-slave_mem_command = "ssh -t -o StrictHostKeyChecking=no %s %s" %\
-        (first_slave, mem_command)
-
-slave_cpu_command = "ssh -t -o StrictHostKeyChecking=no %s %s" %\
-        (first_slave, cpu_command)
+if first_slave:  
+  slave_mem_command = "ssh -t -o StrictHostKeyChecking=no %s %s" %\
+                    (first_slave, mem_command)
+  
+  slave_cpu_command = "ssh -t -o StrictHostKeyChecking=no %s %s" %\
+                    (first_slave, cpu_command)
+else:
+  slave_mem_command = mem_command
+  slave_cpu_command = cpu_command
 
 slave_ram_kb = int(os.popen(slave_mem_command).read().strip())
 
@@ -48,7 +52,7 @@ else:
 
 # Make tachyon_mb as spark_mb for now.
 tachyon_mb = spark_mb
-
+  
 worker_instances = int(os.getenv("SPARK_WORKER_INSTANCES", 1))
 # Distribute equally cpu cores among worker instances
 worker_cores = max(slave_cpus / worker_instances, 1)
