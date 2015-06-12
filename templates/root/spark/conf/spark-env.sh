@@ -12,6 +12,7 @@ export SPARK_DAEMON_JAVA_OPTS="{{spark_daemon_java_opts}}"
 export HADOOP_HOME="/root/ephemeral-hdfs"
 #export SPARK_MASTER_IP={{active_master}}
 export MASTER=`cat /root/spark-ec2/cluster-url`
+export LOCALYTICS_ENV="{{localytics_env}}"
 
 export SPARK_SUBMIT_LIBRARY_PATH="$SPARK_SUBMIT_LIBRARY_PATH:/root/ephemeral-hdfs/lib/native/"
 export SPARK_SUBMIT_CLASSPATH="$SPARK_CLASSPATH:$SPARK_SUBMIT_CLASSPATH:/root/ephemeral-hdfs/conf"
@@ -22,13 +23,13 @@ export SPARK_PUBLIC_DNS=`wget -q -O - http://169.254.169.254/latest/meta-data/lo
 # Set a high ulimit for large shuffles
 ulimit -n 1000000
 
-export ZOOKEEPER_IP=$(curl --silent consul.service.us-east-1.{{locaytics_env}}.localytics.io:8500/v1/catalog/service/{{zookeeper_stack}} | python -c 'import simplejson;import sys; c=simplejson.loads(sys.stdin.read()); print c[0]["Address"]')
+export ZOOKEEPER_IP=$(curl --silent consul.service.us-east-1.${LOCALYTICS_ENV}.localytics.io:8500/v1/catalog/service/{{zookeeper_stack}} | python -c 'import simplejson;import sys; c=simplejson.loads(sys.stdin.read()); print c[0]["Address"]')
 
-export MASTER_STACK_NAME={{master_stack_name}}
-export SPARK_DAEMON_JAVA_OPTS="-javaagent:/root/spark/lib/newrelic/newrelic.jar -Dspark.deploy.recoveryMode=ZOOKEEPER -Dspark.deploy.zookeeper.url=${ZOOKEEPER_IP}:2181 -Dspark.deploy.zookeeper.dir=${MASTER_STACK_NAME}"
+export MASTER_STACK_NAME="{{master_stack_name}}"
+export SPARK_DAEMON_JAVA_OPTS="-javaagent:/root/spark/lib/newrelic/newrelic.jar -Dspark.deploy.recoveryMode=ZOOKEEPER -Dspark.deploy.zookeeper.url=${ZOOKEEPER_IP}:2181 -Dspark.deploy.zookeeper.dir=/${MASTER_STACK_NAME}"
 
 
-export SPARK_MASTER_IP=$(echo 'get /{{master_stack_name}}/master_status' | /opt/zookeeper/zookeeper-3.4.6/bin/zkCli.sh -server ${ZOOKEEPER_IP}:2181 2>/dev/null | tail -n 2 | head -n 1 | grep -v zookeeper | grep -v null)
+export SPARK_MASTER_IP=$(echo "get /${MASTER_STACK_NAME}/master_status" | /opt/zookeeper/zookeeper-3.4.6/bin/zkCli.sh -server ${ZOOKEEPER_IP}:2181 2>/dev/null | tail -n 2 | head -n 1 | grep -v zookeeper | grep -v null)
 
 export LOCAL_IP=$(curl --silent http://169.254.169.254/latest/meta-data/local-ipv4)
 if [ -z "${SPARK_MASTER_IP}" ]
