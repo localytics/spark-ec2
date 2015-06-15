@@ -74,6 +74,12 @@ template_vars = {
   "default_tachyon_mem": "%dMB" % tachyon_mb,
   "aws_access_key_id": os.getenv("AWS_ACCESS_KEY_ID"),
   "aws_secret_access_key": os.getenv("AWS_SECRET_ACCESS_KEY"),
+  "spark_worker_opts": os.getenv("SPARK_WORKER_OPTS", ""),
+  "spark_worker_memory": os.getenv("SPARK_WORKER_MEMORY", ""),
+  "spark_daemon_java_opts": os.getenv("SPARK_DAEMON_JAVA_OPTS", ""),
+  "localytics_env": os.getenv("LOCALYTICS_ENV", ""),
+  "zookeeper_stack": os.getenv("ZOOKEEPER_STACK", ""),
+  "master_stack_name": os.getenv("MASTER_STACK_NAME", ""),
 }
 
 template_dir="/root/spark-ec2/templates"
