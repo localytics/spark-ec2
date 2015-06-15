@@ -28,11 +28,24 @@ export ZOOKEEPER_IP=$(curl --silent consul.service.us-east-1.${LOCALYTICS_ENV}.l
 export MASTER_STACK_NAME="{{master_stack_name}}"
 export SPARK_DAEMON_JAVA_OPTS="-javaagent:/root/spark/lib/newrelic/newrelic.jar -Dspark.deploy.recoveryMode=ZOOKEEPER -Dspark.deploy.zookeeper.url=${ZOOKEEPER_IP}:2181 -Dspark.deploy.zookeeper.dir=/${MASTER_STACK_NAME}"
 
+export MASTER_IPS=$(curl --silent consul.service.us-east-1.${LOCALYTICS_ENV}.localytics.io:8500/v1/catalog/service/${MASTER_STACK_NAME} | python -c 'import simplejson;import sys; c=simplejson.loads(sys.stdin.read()); print "\n".join([ n["Address"] for n in c])')
+
+export LOCAL_IP=$(curl --silent http://169.254.169.254/latest/meta-data/local-ipv4)
+
+for m in ${MASTER_IPS}
+do
+    if [ "$m" = "$LOCAL_IP" ]
+    then
+       export IM_A_MASTER="true" 
+    fi
+done
 
 export SPARK_MASTER_IP=$(echo "get /${MASTER_STACK_NAME}/master_status" | /opt/zookeeper/zookeeper-3.4.6/bin/zkCli.sh -server ${ZOOKEEPER_IP}:2181 2>/dev/null | tail -n 2 | head -n 1 | grep -v zookeeper | grep -v null)
 
-export LOCAL_IP=$(curl --silent http://169.254.169.254/latest/meta-data/local-ipv4)
 if [ -z "${SPARK_MASTER_IP}" ]
-  then
-     export SPARK_MASTER_IP="${LOCAL_IP}"
+then
+      export SPARK_MASTER_IP="${LOCAL_IP}"
+elif [ "${IM_A_MASTER}" = "true" ] && [ "${SPARK_MASTER_IP}" != "${LOCAL_IP}" ]
+then    
+      export SPARK_MASTER_IP="${LOCAL_IP}"
 fi
